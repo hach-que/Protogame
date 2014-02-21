@@ -52,14 +52,6 @@ namespace Protogame
         }
 
         /// <summary>
-        /// Gets or sets the camera.
-        /// </summary>
-        /// <value>
-        /// The camera.
-        /// </value>
-        public Camera Camera { get; set; }
-
-        /// <summary>
         /// Gets or sets the fps.
         /// </summary>
         /// <value>
@@ -178,7 +170,6 @@ namespace Protogame
 
             this.Graphics.PreferredBackBufferWidth = width;
             this.Graphics.PreferredBackBufferHeight = height;
-            this.Camera = new Camera(width, height);
             this.Graphics.ApplyChanges();
         }
 

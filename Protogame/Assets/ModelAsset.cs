@@ -36,18 +36,23 @@
         /// <param name="sourcedFromRaw">
         /// Whether or not this asset was sourced from a purely raw asset file (such as a PNG).
         /// </param>
+        /// <param name="extension">
+        /// The appropriate file extension for this model.
+        /// </param>
         public ModelAsset(
             string name, 
             byte[] rawData, 
             Dictionary<string, byte[]> rawAdditionalAnimations, 
             PlatformData data, 
-            bool sourcedFromRaw)
+            bool sourcedFromRaw,
+            string extension)
         {
             this.Name = name;
             this.RawData = rawData;
             this.RawAdditionalAnimations = rawAdditionalAnimations;
             this.PlatformData = data;
             this.SourcedFromRaw = sourcedFromRaw;
+            this.Extension = extension;
 
             if (this.PlatformData != null)
             {
@@ -122,6 +127,15 @@
         /// The raw texture data.
         /// </value>
         public byte[] RawData { get; set; }
+
+        /// <summary>
+        /// The appropriate file extension for the raw model data.  This is only used during model
+        /// compilation.
+        /// </summary>
+        /// <value>
+        /// The file extension for the raw model data.
+        /// </value>
+        public string Extension { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether the asset only contains source information.

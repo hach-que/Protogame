@@ -33,6 +33,14 @@
         /// </summary>
         private bool m_WorldViewProjParamDirty = true;
 
+        private EffectParameter m_WorldParam;
+
+        private EffectParameter m_ViewParam;
+
+        private EffectParameter m_ProjectionParam;
+
+        private bool m_SeperatedMatrixes;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="EffectWithMatrices"/> class.
         /// </summary>
@@ -42,9 +50,11 @@
         /// <param name="bytecode">
         /// The bytecode.
         /// </param>
-        public EffectWithMatrices(GraphicsDevice device, byte[] bytecode)
+        public EffectWithMatrices(GraphicsDevice device, byte[] bytecode, bool seperatedMatrixes)
             : base(device, bytecode)
         {
+            this.m_SeperatedMatrixes = seperatedMatrixes;
+
             this.CacheEffectParameters();
         }
 
@@ -57,6 +67,8 @@
         protected EffectWithMatrices(EffectWithMatrices cloneSource)
             : base(cloneSource)
         {
+            this.m_SeperatedMatrixes = cloneSource.m_SeperatedMatrixes;
+
             this.CacheEffectParameters();
 
             this.m_World = cloneSource.m_World;
@@ -145,13 +157,22 @@
         {
             if (this.m_WorldViewProjParamDirty)
             {
-                Matrix worldViewProj;
-                Matrix worldView;
+                if (this.m_SeperatedMatrixes)
+                {
+                    this.m_WorldParam.SetValue(this.m_World);
+                    this.m_ViewParam.SetValue(this.m_View);
+                    this.m_ProjectionParam.SetValue(this.m_Projection);
+                }
+                else
+                {
+                    Matrix worldViewProj;
+                    Matrix worldView;
 
-                Matrix.Multiply(ref this.m_World, ref this.m_View, out worldView);
-                Matrix.Multiply(ref worldView, ref this.m_Projection, out worldViewProj);
+                    Matrix.Multiply(ref this.m_World, ref this.m_View, out worldView);
+                    Matrix.Multiply(ref worldView, ref this.m_Projection, out worldViewProj);
 
-                this.m_WorldViewProjParam.SetValue(worldViewProj);
+                    this.m_WorldViewProjParam.SetValue(worldViewProj);
+                }
 
                 this.m_WorldViewProjParamDirty = false;
             }
@@ -164,7 +185,16 @@
         /// </summary>
         private void CacheEffectParameters()
         {
-            this.m_WorldViewProjParam = this.Parameters["WorldViewProj"];
+            if (this.m_SeperatedMatrixes)
+            {
+                this.m_WorldParam = this.Parameters["World"];
+                this.m_ViewParam = this.Parameters["View"];
+                this.m_ProjectionParam = this.Parameters["Projection"];
+            }
+            else
+            {
+                this.m_WorldViewProjParam = this.Parameters["WorldViewProj"];
+            }
         }
     }
 }

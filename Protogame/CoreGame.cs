@@ -152,7 +152,6 @@ namespace Protogame
                 var height = base.Window.ClientBounds.Height;
                 this.GameContext.Graphics.PreferredBackBufferWidth = width;
                 this.GameContext.Graphics.PreferredBackBufferHeight = height;
-                this.GameContext.Camera = new Camera(width, height);
                 this.GameContext.Graphics.ApplyChanges();
                 shouldHandleResize = true;
             };

@@ -19,7 +19,7 @@ namespace Protogame
         /// <summary>
         /// The current stack of render targets.
         /// </summary>
-        private readonly Stack<RenderTarget2D> m_RenderTargets = new Stack<RenderTarget2D>();
+        private readonly Stack<RenderTargetBinding[]> m_RenderTargets = new Stack<RenderTargetBinding[]>();
 
         /// <summary>
         /// The current bounding frustum.
@@ -110,6 +110,16 @@ namespace Protogame
         /// The sprite batch.
         /// </value>
         public SpriteBatch SpriteBatch { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the current camera position.  This is used for deferred rendering for lighting
+        /// calculations.  You can ignore this property if you're not using deferred rendering.
+        /// </summary>
+        /// <value>
+        /// The current camera position.  This is used for deferred rendering for lighting
+        /// calculations.  You can ignore this property if you're not using deferred rendering.
+        /// </value>
+        public Vector3 CameraPosition { get; set; }
 
         /// <summary>
         /// Gets or sets the view matrix for 3D rendering.
@@ -218,11 +228,23 @@ namespace Protogame
                 return;
             }
 
+            var expectedTargets = this.m_RenderTargets.Peek();
             var currentTargets = this.GraphicsDevice.GetRenderTargets();
-
-            if (currentTargets.Length > 0)
+            if (currentTargets.Length != expectedTargets.Length)
             {
-                if (currentTargets[0].RenderTarget != this.m_RenderTargets.Peek())
+                throw new InvalidOperationException(
+                    "Current render targets do not match last render targets "
+                    + "pushed onto the stack with PushRenderTarget.  Ensure there "
+                    + "is no code manually calling SetRenderTarget and not restoring "
+                    + "it at the end of it's execution.");
+            }
+            
+            for (var i = 0; i < currentTargets.Length; i++)
+            {
+                var expected = expectedTargets[i];
+                var current = currentTargets[i];
+
+                if (current.RenderTarget != expected.RenderTarget)
                 {
                     throw new InvalidOperationException(
                         "Current render target does not match last render target "
@@ -236,11 +258,11 @@ namespace Protogame
 
             if (this.m_RenderTargets.Count == 0)
             {
-                this.GraphicsDevice.SetRenderTarget(null);
+                this.GraphicsDevice.SetRenderTargets(null);
             }
             else
             {
-                this.GraphicsDevice.SetRenderTarget(this.m_RenderTargets.Peek());
+                this.GraphicsDevice.SetRenderTargets(this.m_RenderTargets.Peek());
             }
         }
 
@@ -282,10 +304,25 @@ namespace Protogame
         /// <param name="renderTarget">
         /// The render target instance to make active.
         /// </param>
-        public void PushRenderTarget(RenderTarget2D renderTarget)
+        public void PushRenderTarget(RenderTargetBinding renderTarget)
         {
-            this.m_RenderTargets.Push(renderTarget);
-            this.GraphicsDevice.SetRenderTarget(renderTarget);
+            this.m_RenderTargets.Push(new[] { renderTarget });
+            this.GraphicsDevice.SetRenderTargets(renderTarget);
+        }
+
+        /// <summary>
+        /// Push an array of render targets onto the current rendering context, making them
+        /// the active target for rendering.  By using the PushRenderTarget / PopRenderTarget
+        /// methods, this allows you to safely chain render target switches, without risk
+        /// of losing the previous render target.
+        /// </summary>
+        /// <param name="renderTargets">
+        /// The render targets to make active.
+        /// </param>
+        public void PushRenderTarget(params RenderTargetBinding[] renderTargets)
+        {
+            this.m_RenderTargets.Push(renderTargets);
+            this.GraphicsDevice.SetRenderTargets(renderTargets);
         }
 
         /// <summary>

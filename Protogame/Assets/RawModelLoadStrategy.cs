@@ -20,7 +20,7 @@
         {
             get
             {
-                return new[] { "fbx" };
+                return new[] { "fbx", "x" };
             }
         }
 
@@ -78,7 +78,26 @@
                         PlatformData = (PlatformData)null, 
                         RawData = this.ReadModelData(file.FullName), 
                         RawAdditionalAnimations = otherAnimations, 
-                        SourcedFromRaw = true
+                        SourcedFromRaw = true,
+                        Extension = "fbx"
+                    };
+            }
+
+            file = new FileInfo(Path.Combine(path, name.Replace('.', Path.DirectorySeparatorChar) + ".x"));
+
+            if (file.Exists)
+            {
+                lastModified = file.LastWriteTime;
+
+                return
+                    new
+                    {
+                        Loader = typeof(ModelAssetLoader).FullName,
+                        PlatformData = (PlatformData)null,
+                        RawData = this.ReadModelData(file.FullName),
+                        RawAdditionalAnimations = new Dictionary<string, byte[]>(),
+                        SourcedFromRaw = true,
+                        Extension = "x"
                     };
             }
 

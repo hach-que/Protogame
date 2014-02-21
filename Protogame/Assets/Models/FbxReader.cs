@@ -23,15 +23,18 @@ namespace Protogame
         /// <param name="data">
         /// The byte array containing the FBX data.
         /// </param>
+        /// <param name="extension">
+        /// The file extension for raw model data.
+        /// </param>
         /// <param name="rawAdditionalAnimations">
         /// A dictionary mapping of animation names to byte arrays for additional FBX files to load.
         /// </param>
         /// <returns>
         /// The loaded <see cref="IModel"/>.
         /// </returns>
-        public IModel Load(byte[] data, Dictionary<string, byte[]> rawAdditionalAnimations)
+        public IModel Load(byte[] data, string extension, Dictionary<string, byte[]> rawAdditionalAnimations)
         {
-            var file = Path.GetTempFileName() + ".fbx";
+            var file = Path.GetTempFileName() + "." + extension;
             using (var stream = new FileStream(file, FileMode.Create))
             {
                 stream.Write(data, 0, data.Length);
@@ -43,7 +46,7 @@ namespace Protogame
             {
                 foreach (var kv in rawAdditionalAnimations)
                 {
-                    var tempFile = Path.GetTempFileName() + ".fbx";
+                    var tempFile = Path.GetTempFileName() + "." + extension;
                     using (var stream = new FileStream(tempFile, FileMode.Create))
                     {
                         stream.Write(kv.Value, 0, kv.Value.Length);
@@ -396,7 +399,7 @@ namespace Protogame
             {
                 var pos = mesh.Vertices[i];
                 var normal = mesh.Normals[i];
-                var uv = uvs[i];
+                var uv = i < uvs.Count ? uvs[i] : new Vector3D(0, 0, 0);
 
                 vertexes.Add(
                     new VertexPositionNormalTexture(

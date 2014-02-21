@@ -368,6 +368,8 @@ namespace Protogame
         /// </param>
         public void RenderCube(IRenderContext context, Matrix transform, Color color)
         {
+            return;
+
             if (!context.Is3DContext)
             {
                 throw new InvalidOperationException("Can't use 3D rendering utilities in 2D context.");

@@ -70,6 +70,16 @@ namespace Protogame
         SpriteBatch SpriteBatch { get; }
 
         /// <summary>
+        /// Gets or sets the current camera position.  This is used for deferred rendering for lighting
+        /// calculations.  You can ignore this property if you're not using deferred rendering.
+        /// </summary>
+        /// <value>
+        /// The current camera position.  This is used for deferred rendering for lighting
+        /// calculations.  You can ignore this property if you're not using deferred rendering.
+        /// </value>
+        Vector3 CameraPosition { get; set; }
+
+        /// <summary>
         /// Gets or sets the view matrix for 3D rendering.
         /// </summary>
         /// <value>
@@ -134,7 +144,18 @@ namespace Protogame
         /// <param name="renderTarget">
         /// The render target instance to make active.
         /// </param>
-        void PushRenderTarget(RenderTarget2D renderTarget);
+        void PushRenderTarget(RenderTargetBinding renderTarget);
+
+        /// <summary>
+        /// Push an array of render targets onto the current rendering context, making them
+        /// the active target for rendering.  By using the PushRenderTarget / PopRenderTarget
+        /// methods, this allows you to safely chain render target switches, without risk
+        /// of losing the previous render target.
+        /// </summary>
+        /// <param name="renderTargets">
+        /// The render targets to make active.
+        /// </param>
+        void PushRenderTarget(params RenderTargetBinding[] renderTargets);
 
         /// <summary>
         /// Called by the world manager to set up the render context at the beginning of a render.

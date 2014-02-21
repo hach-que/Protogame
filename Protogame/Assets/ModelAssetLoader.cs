@@ -77,7 +77,7 @@ namespace Protogame
         /// </returns>
         public IAsset GetNew(IAssetManager assetManager, string name)
         {
-            return new ModelAsset(name, null, null, null, false);
+            return new ModelAsset(name, null, null, null, false, string.Empty);
         }
 
         /// <summary>
@@ -99,7 +99,7 @@ namespace Protogame
         {
             if (data is CompiledAsset)
             {
-                return new ModelAsset(name, null, null, data.PlatformData, false);
+                return new ModelAsset(name, null, null, data.PlatformData, false, string.Empty);
             }
 
             PlatformData platformData = null;
@@ -113,7 +113,8 @@ namespace Protogame
                 ByteReader.ReadAsByteArray(data.RawData), 
                 data.RawAdditionalAnimations, 
                 platformData, 
-                data.SourcedFromRaw != null && (bool)data.SourcedFromRaw);
+                data.SourcedFromRaw != null && (bool)data.SourcedFromRaw,
+                data.Extension ?? string.Empty);
 
             return model;
         }

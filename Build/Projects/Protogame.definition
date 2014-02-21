@@ -172,6 +172,14 @@
     <Compile Include="DefaultRenderContext.cs" />
     <Compile Include="DefaultTileUtilities.cs" />
     <Compile Include="DefaultUpdateContext.cs" />
+    <Compile Include="DeferredLighting\DefaultDeferredRenderer.cs" />
+    <Compile Include="DeferredLighting\DefaultDeferredRendererFactory.cs" />
+    <Compile Include="DeferredLighting\DefaultQuadRenderer.cs" />
+    <Compile Include="DeferredLighting\DeferredLighting3DWorldManager.cs" />
+    <Compile Include="DeferredLighting\IDeferredRenderer.cs" />
+    <Compile Include="DeferredLighting\IDeferredRendererFactory.cs" />
+    <Compile Include="DeferredLighting\IQuadRenderer.cs" />
+    <Compile Include="DeferredLighting\ProtogameDeferredLightingIoCModule.cs" />
     <Compile Include="Entity.cs" />
     <Compile Include="Events\ConsoleEventBinder.cs" />
     <Compile Include="Events\ConsoleEventListener.cs" />
@@ -371,6 +379,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Platforms>Windows</Platforms>
     </Content>
+    <EmbeddedResource Include="Assets\Effects\Macros.fx" />
     <EmbeddedResource Include="font.Default.asset" />
     <EmbeddedResource Include="font.Default-Android.bin" />
     <EmbeddedResource Include="font.Default-iOS.bin" />

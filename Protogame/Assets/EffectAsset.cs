@@ -163,15 +163,16 @@ namespace Protogame
                     var effect = new Effect(graphicsDevice, this.PlatformData.Data);
 
                     // Determine what kind of effect class we should use.
-                    var hasMatrix = effect.Parameters["WorldViewProj"] != null;
+                    var hasSeperatedMatrixes = effect.Parameters["World"] != null && effect.Parameters["View"] != null && effect.Parameters["Projection"] != null;
+                    var hasMatrix = effect.Parameters["WorldViewProj"] != null || hasSeperatedMatrixes;
                     var hasTexture = effect.Parameters["Texture"] != null;
                     if (hasMatrix && hasTexture)
                     {
-                        this.Effect = new EffectWithMatricesAndTexture(graphicsDevice, this.PlatformData.Data);
+                        this.Effect = new EffectWithMatricesAndTexture(graphicsDevice, this.PlatformData.Data, hasSeperatedMatrixes);
                     }
                     else if (hasMatrix)
                     {
-                        this.Effect = new EffectWithMatrices(graphicsDevice, this.PlatformData.Data);
+                        this.Effect = new EffectWithMatrices(graphicsDevice, this.PlatformData.Data, hasSeperatedMatrixes);
                     }
                     else if (hasTexture)
                     {

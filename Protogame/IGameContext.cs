@@ -9,14 +9,6 @@ namespace Protogame
     public interface IGameContext
     {
         /// <summary>
-        /// Gets or sets the camera.
-        /// </summary>
-        /// <value>
-        /// The camera.
-        /// </value>
-        Camera Camera { get; set; }
-
-        /// <summary>
         /// Gets or sets the fps.
         /// </summary>
         /// <value>
