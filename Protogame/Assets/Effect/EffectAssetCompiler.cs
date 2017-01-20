@@ -23,7 +23,11 @@ namespace Protogame
             var output = new EffectContent();
             output.EffectCode = this.GetEffectPrefixCode() + asset.Code;
 
-            var tempPath = Path.GetTempFileName();
+            var pathStorage = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Protogame", "EffectCompilation", "Standard", asset.Name, platform.ToString());
+            Directory.CreateDirectory(pathStorage);
+
+            var tempPath = Path.Combine(pathStorage, "Effect.fx");
             using (var writer = new StreamWriter(tempPath))
             {
                 writer.Write(output.EffectCode);
@@ -31,17 +35,18 @@ namespace Protogame
 
             output.Identity = new ContentIdentity(tempPath);
 
-            var tempOutputPath = Path.GetTempFileName();
+            var tempDebugOutputPath = Path.Combine(pathStorage, "EffectDebug.bin");
+            var tempReleaseOutputPath = Path.Combine(pathStorage, "EffectRelease.bin");
 
             var debugContent = EffectCompilerHelper.Compile(
                 output,
-                tempOutputPath,
+                tempDebugOutputPath,
                 platform,
                 true,
                 string.Empty);
             var releaseContent = EffectCompilerHelper.Compile(
                 output,
-                tempOutputPath,
+                tempReleaseOutputPath,
                 platform,
                 false,
                 string.Empty);
@@ -73,8 +78,8 @@ namespace Protogame
                 }
             }
 
-            File.Delete(tempPath);
-            File.Delete(tempOutputPath);
+            //File.Delete(tempPath);
+            //File.Delete(tempOutputPath);
 
             try
             {

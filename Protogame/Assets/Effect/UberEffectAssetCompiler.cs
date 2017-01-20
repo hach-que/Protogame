@@ -42,11 +42,16 @@ namespace Protogame
                 var output = new EffectContent();
                 output.EffectCode = this.GetEffectPrefixCode() + asset.Code;
 
-                string tempPath = null, tempOutputPath = null;
+                string tempPath = null, tempDebugOutputPath = null, tempReleaseOutputPath = null;
                 try
                 {
-                    tempPath = Path.GetTempFileName();
-                    tempOutputPath = Path.GetTempFileName();
+                    var pathStorage = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                        "Protogame", "EffectCompilation", "Uber", asset.Name, platform.ToString(), name);
+                    Directory.CreateDirectory(pathStorage);
+
+                    tempPath = Path.Combine(pathStorage, "Effect.fx");
+                    tempDebugOutputPath = Path.Combine(pathStorage, "EffectDebug.bin");
+                    tempReleaseOutputPath = Path.Combine(pathStorage, "EffectRelease.bin");
 
                     using (var writer = new StreamWriter(tempPath))
                     {
@@ -57,13 +62,13 @@ namespace Protogame
 
                     var debugContent = EffectCompilerHelper.Compile(
                         output,
-                        tempOutputPath,
+                        tempDebugOutputPath,
                         platform,
                         true,
                         defines);
                     var releaseContent = EffectCompilerHelper.Compile(
                         output,
-                        tempOutputPath,
+                        tempReleaseOutputPath,
                         platform,
                         false,
                         defines);
@@ -79,7 +84,7 @@ namespace Protogame
                 }
                 finally
                 {
-                    if (tempOutputPath != null)
+                    /*if (tempOutputPath != null)
                     {
                         File.Delete(tempOutputPath);
                     }
@@ -87,7 +92,7 @@ namespace Protogame
                     if (tempOutputPath != null)
                     {
                         File.Delete(tempPath);
-                    }
+                    }*/
                 }
             }
             

@@ -31,7 +31,11 @@ namespace Protogame
         /// </returns>
         protected byte[] CompileAndGetBytes(object content)
         {
-            var temp = Path.GetTempFileName();
+            var pathStorage = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Protogame", "ContentCompilation", new Guid().ToString());
+            Directory.CreateDirectory(pathStorage);
+
+            var temp = Path.Combine(pathStorage, "Input.txt");
             var compiler = new ContentCompiler();
             try
             {
@@ -42,9 +46,9 @@ namespace Protogame
                         content, 
                         MonoGamePlatform.Windows, 
                         GraphicsProfile.Reach, 
-                        false, 
-                        Environment.CurrentDirectory, 
-                        Environment.CurrentDirectory);
+                        false,
+                        pathStorage,
+                        pathStorage);
                 }
 
                 byte[] result;
@@ -57,12 +61,12 @@ namespace Protogame
                     }
                 }
 
-                File.Delete(temp);
+                //File.Delete(temp);
                 return result;
             }
             finally
             {
-                File.Delete(temp);
+                //File.Delete(temp);
             }
         }
     }
