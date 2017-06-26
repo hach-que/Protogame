@@ -25,18 +25,6 @@
         IAnimationCollection AvailableAnimations { get; }
 
         /// <summary>
-        /// Gets the material information associated with this model, if
-        /// one exists.
-        /// </summary>
-        /// <remarks>
-        /// This value is null if there is no material attached to this model.
-        /// </remarks>
-        /// <value>
-        /// The material associated with this model.
-        /// </value>
-        IMaterial Material { get; }
-
-        /// <summary>
         /// Gets the root bone of the model's skeleton.
         /// </summary>
         /// <remarks>
@@ -59,46 +47,18 @@
         IDictionary<string, IModelBone> Bones { get; }
 
         /// <summary>
-        /// Gets the index buffer.
+        /// Gets the model's meshes and submeshes.
         /// </summary>
-        /// <value>
-        /// The index buffer.
-        /// </value>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown if the vertex or index buffers have not been loaded with <see cref="LoadBuffers"/>.
-        /// </exception>
-        IndexBuffer IndexBuffer { get; }
-
-        /// <summary>
-        /// Gets the indices of the model.
-        /// </summary>
-        /// <value>
-        /// The indices of the model.
-        /// </value>
-        int[] Indices { get; }
-        
-        /// <summary>
-        /// Frees any vertex buffers that are cached inside this model.
-        /// </summary>
-        void FreeCachedVertexBuffers();
-
-        /// <summary>
-        /// Gets the vertexes of the model.
-        /// </summary>
-        /// <value>
-        /// The vertexes of the model.
-        /// </value>
-        ModelVertex[] Vertexes { get; }
+        /// <remarks>
+        /// All models have at least one mesh.
+        /// </remarks>
+        IModelMesh[] Meshes { get; }
 
         /// <summary>
         /// Renders the model using the specified transform.
         /// </summary>
-        /// <param name="renderContext">
-        ///     The render context.
-        /// </param>
-        /// <param name="transform">
-        ///     The transform.
-        /// </param>
+        /// <param name="renderContext">The render context.</param>
+        /// <param name="transform">The transform.</param>
         /// <param name="effectParameterSet"></param>
         /// <param name="effect"></param>
         void Render(IRenderContext renderContext, IEffect effect, IEffectParameterSet effectParameterSet, Matrix transform);
@@ -106,15 +66,16 @@
         /// <summary>
         /// Creates a render request for the model using the specified transform.
         /// </summary>
-        /// <param name="renderContext">
-        ///     The render context.
-        /// </param>
+        /// <param name="renderContext">The render context.</param>
         /// <param name="effect"></param>
         /// <param name="effectParameterSet"></param>
-        /// <param name="transform">
-        ///     The transform.
-        /// </param>
-        IRenderRequest CreateRenderRequest(IRenderContext renderContext, IEffect effect, IEffectParameterSet effectParameterSet, Matrix transform);
+        /// <param name="transform">The transform.</param>
+        IRenderRequest[] CreateRenderRequests(IRenderContext renderContext, IEffect effect, IEffectParameterSet effectParameterSet, Matrix transform);
+
+        /// <summary>
+        /// Frees any vertex buffers that are cached inside this model.
+        /// </summary>
+        void FreeCachedVertexBuffers();
 
         /// <summary>
         /// Loads vertex and index buffers for all of animations in this model.

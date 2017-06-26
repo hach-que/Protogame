@@ -125,6 +125,7 @@
     <Compile Include="Assets\Model\IAnimationCollection.cs" />
     <Compile Include="Assets\Model\IModel.cs" />
     <Compile Include="Assets\Model\IModelBone.cs" />
+    <Compile Include="Assets\Model\IModelMesh.cs" />
     <Compile Include="Assets\Model\IModelRenderConfiguration.cs" />
     <Compile Include="Assets\Model\IModelSerializer.cs" />
     <Compile Include="Assets\Model\Model.cs" />
@@ -132,6 +133,7 @@
     <Compile Include="Assets\Model\ModelAssetCompiler.cs" />
     <Compile Include="Assets\Model\ModelAssetLoader.cs" />
     <Compile Include="Assets\Model\ModelBone.cs" />
+    <Compile Include="Assets\Model\ModelMesh.cs" />
     <Compile Include="Assets\Model\ModelSerializerGeneric.cs" />
     <Compile Include="Assets\Model\ModelSerializerVersion1.cs" />
     <Compile Include="Assets\Model\ModelSerializerVersion2.cs" />

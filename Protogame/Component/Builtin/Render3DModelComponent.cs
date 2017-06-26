@@ -71,7 +71,7 @@ namespace Protogame
 
         private Matrix _lastWorldMatrix;
 
-        private IRenderRequest _renderRequest;
+        private IRenderRequest[] _renderRequests;
 
         private IAnimation _lastAnimation;
 
@@ -195,11 +195,11 @@ namespace Protogame
                     {
                         animation.Apply(_model, _animationTracker.ElapsedMilliseconds / 1000f, 0.5f);
 
-                        _renderRequest = _model.CreateRenderRequest(renderContext, effect, parameterSet, matrix);
+                        _renderRequests = _model.CreateRenderRequests(renderContext, effect, parameterSet, matrix);
                     }
-                    else if (changedRenderRequest || _renderRequest == null)
+                    else if (changedRenderRequest || _renderRequests == null)
                     {
-                        _renderRequest = _model.CreateRenderRequest(renderContext, effect, parameterSet, matrix);
+                        _renderRequests = _model.CreateRenderRequests(renderContext, effect, parameterSet, matrix);
                     }
 
                     _lastWorldMatrix = matrix;
