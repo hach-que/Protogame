@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace Protogame
 {
@@ -31,7 +32,7 @@ namespace Protogame
                     _cachedModel = _modelSerializer.Deserialize(Name, _data);
                 }
 
-                if (_cachedModel.Root != null)
+                if (_cachedModel.Meshes.Any(x => x.Root != null))
                 {
                     // Model has bones for animation; we need to pass a unique instance to the caller so they can
                     // modify and apply bone animations which require a unique vertex buffer.

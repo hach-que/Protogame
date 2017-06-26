@@ -24,6 +24,11 @@ namespace Protogame
         private readonly IModelRenderConfiguration[] _modelRenderConfigurations;
 
         /// <summary>
+        /// The flattened version of the bone structures.
+        /// </summary>
+        private readonly IModelBone[] _flattenedBones;
+
+        /// <summary>
         /// The index buffer.
         /// </summary>
         private IndexBuffer _indexBuffer;
@@ -56,6 +61,9 @@ namespace Protogame
         /// <param name="material">
         /// The material associated with this mesh.
         /// </param>
+        /// <param name="rootBone">
+        /// The root bone, or null if there's no skeletal information.
+        /// </param>
         /// <param name="vertexes">
         /// The vertexes associated with this mesh.
         /// </param>
@@ -66,6 +74,7 @@ namespace Protogame
             IModelRenderConfiguration[] modelRenderConfigurations,
             IRenderBatcher renderBatcher,
             IMaterial material,
+            IModelBone rootBone,
             ModelVertex[] vertexes,
             int[] indices)
         {
@@ -75,6 +84,13 @@ namespace Protogame
             Vertexes = vertexes;
             Indices = indices;
             Material = material;
+            Root = rootBone;
+
+            if (Root != null)
+            {
+                _flattenedBones = Root.Flatten();
+                Bones = _flattenedBones.ToDictionary(k => k.Name, v => v);
+            }
 
             _cachedVertexBuffers = new Dictionary<object, VertexBuffer>();
             _modelRenderConfigurations = modelRenderConfigurations;
@@ -82,16 +98,38 @@ namespace Protogame
         }
 
         /// <summary>
-        /// Gets the material information associated with this model, if
+        /// Gets the material information associated with this mesh, if
         /// one exists.
         /// </summary>
         /// <remarks>
-        /// This value is null if there is no material attached to this model.
+        /// This value is null if there is no material attached to this mesh.
         /// </remarks>
         /// <value>
-        /// The material associated with this model.
+        /// The material associated with this mesh.
         /// </value>
         public IMaterial Material { get; private set; }
+
+        /// <summary>
+        /// Gets the root bone of the mesh's skeleton.
+        /// </summary>
+        /// <remarks>
+        /// This value is null if there is no skeleton attached to the mesh.
+        /// </remarks>
+        /// <value>
+        /// The root bone of the mesh's skeleton.
+        /// </value>
+        public IModelBone Root { get; private set; }
+
+        /// <summary>
+        /// Gets the mesh's bones by their names.
+        /// </summary>
+        /// <remarks>
+        /// This value is null if there is no skeleton attached to the mesh.
+        /// </remarks>
+        /// <value>
+        /// The mesh bones addressed by their names.
+        /// </value>
+        public IDictionary<string, IModelBone> Bones { get; private set; }
 
         /// <summary>
         /// Gets the index buffer.
@@ -116,15 +154,15 @@ namespace Protogame
         }
 
         /// <summary>
-        /// Gets the indices of the model.
+        /// Gets the indices of the mesh.
         /// </summary>
         /// <value>
-        /// The indices of the model.
+        /// The indices of the mesh.
         /// </value>
         public int[] Indices { get; private set; }
 
         /// <summary>
-        /// Frees any vertex buffers that are cached inside this model.
+        /// Frees any vertex buffers that are cached inside this mesh.
         /// </summary>
         public void FreeCachedVertexBuffers()
         {
@@ -138,15 +176,15 @@ namespace Protogame
 
 
         /// <summary>
-        /// Gets the vertexes of the model.
+        /// Gets the vertexes of the mesh.
         /// </summary>
         /// <value>
-        /// The vertexes of the model.
+        /// The vertexes of the mesh.
         /// </value>
         public ModelVertex[] Vertexes { get; private set; }
 
         /// <summary>
-        /// Renders the model using the specified transform and GPU mapping.
+        /// Renders the mesh using the specified transform and GPU mapping.
         /// </summary>
         /// <param name="renderContext">
         ///     The render context.
@@ -156,14 +194,14 @@ namespace Protogame
         /// </param>
         /// <param name="effectParameterSet"></param>
         /// <param name="effect"></param>
-        public void Render(Model model, IModelBone[] flattenedBones, IRenderContext renderContext, IEffect effect, IEffectParameterSet effectParameterSet, Matrix transform)
+        public void Render(IModel model, IRenderContext renderContext, IEffect effect, IEffectParameterSet effectParameterSet, Matrix transform)
         {
-            var request = CreateRenderRequest(model, flattenedBones, renderContext, effect, effectParameterSet, transform);
+            var request = CreateRenderRequest(model, renderContext, effect, effectParameterSet, transform);
             _renderBatcher.RenderRequestImmediate(renderContext, request);
         }
 
         /// <summary>
-        /// Load the vertex and index buffer for this model.
+        /// Load the vertex and index buffer for this mesh.
         /// </summary>
         /// <param name="graphicsDevice">
         /// The graphics device.
@@ -182,7 +220,7 @@ namespace Protogame
         }
         
         /// <summary>
-        /// Creates a render request for the model using the specified transform.
+        /// Creates a render request for the mesh using the specified transform.
         /// </summary>
         /// <param name="renderContext">
         ///     The render context.
@@ -192,7 +230,7 @@ namespace Protogame
         /// <param name="transform">
         ///     The transform.
         /// </param>
-        public IRenderRequest CreateRenderRequest(Model model, IModelBone[] flattenedBones, IRenderContext renderContext, IEffect effect, IEffectParameterSet effectParameterSet, Matrix transform)
+        public IRenderRequest CreateRenderRequest(IModel model, IRenderContext renderContext, IEffect effect, IEffectParameterSet effectParameterSet, Matrix transform)
         {
             if (Vertexes.Length == 0 && Indices.Length == 0)
             {
@@ -215,7 +253,7 @@ namespace Protogame
                 if (_cachedModelVertexMapping == null)
                 {
                     _cachedModelVertexMapping =
-                        _modelRenderConfigurations.Select(x => x.GetVertexMappingToGPU(model, effect))
+                        _modelRenderConfigurations.Select(x => x.GetVertexMappingToGPU((Model)model, effect))
                             .FirstOrDefault(x => x != null);
                     if (_cachedModelVertexMapping == null)
                     {

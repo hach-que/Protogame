@@ -25,28 +25,6 @@
         IAnimationCollection AvailableAnimations { get; }
 
         /// <summary>
-        /// Gets the root bone of the model's skeleton.
-        /// </summary>
-        /// <remarks>
-        /// This value is null if there is no skeleton attached to the model.
-        /// </remarks>
-        /// <value>
-        /// The root bone of the model's skeleton.
-        /// </value>
-        IModelBone Root { get; }
-
-        /// <summary>
-        /// Gets the model's bones by their names.
-        /// </summary>
-        /// <remarks>
-        /// This value is null if there is no skeleton attached to the model.
-        /// </remarks>
-        /// <value>
-        /// The model bones addressed by their names.
-        /// </value>
-        IDictionary<string, IModelBone> Bones { get; }
-
-        /// <summary>
         /// Gets the model's meshes and submeshes.
         /// </summary>
         /// <remarks>
@@ -62,15 +40,6 @@
         /// <param name="effectParameterSet"></param>
         /// <param name="effect"></param>
         void Render(IRenderContext renderContext, IEffect effect, IEffectParameterSet effectParameterSet, Matrix transform);
-
-        /// <summary>
-        /// Creates a render request for the model using the specified transform.
-        /// </summary>
-        /// <param name="renderContext">The render context.</param>
-        /// <param name="effect"></param>
-        /// <param name="effectParameterSet"></param>
-        /// <param name="transform">The transform.</param>
-        IRenderRequest[] CreateRenderRequests(IRenderContext renderContext, IEffect effect, IEffectParameterSet effectParameterSet, Matrix transform);
 
         /// <summary>
         /// Frees any vertex buffers that are cached inside this model.

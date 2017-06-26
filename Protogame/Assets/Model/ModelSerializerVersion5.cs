@@ -1,20 +1,22 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics.PackedVector;
+﻿using System;
 
 namespace Protogame
 {
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using Microsoft.Xna.Framework;
+    using Microsoft.Xna.Framework.Graphics.PackedVector;
+
     /// <summary>
     /// Serializes and deserializes <see cref="IModel"/> for storage in a binary format.
     /// </summary>
-    public class ModelSerializerVersion1 : IModelSerializer
+    public class ModelSerializerVersion5 : IModelSerializer
     {
         private readonly IModelRenderConfiguration[] _modelRenderConfigurations;
         private readonly IRenderBatcher _renderBatcher;
 
-        public ModelSerializerVersion1(
+        public ModelSerializerVersion5(
             IModelRenderConfiguration[] modelRenderConfigurations,
             IRenderBatcher renderBatcher)
         {
@@ -112,6 +114,11 @@ namespace Protogame
         /// </returns>
         private IModelBone DeserializeBoneHierarchy(BinaryReader reader)
         {
+            if (!reader.ReadBoolean())
+            {
+                return null;
+            }
+
             var id = reader.ReadInt32();
             var name = reader.ReadString();
 
@@ -267,17 +274,150 @@ namespace Protogame
         /// </returns>
         private Model DeserializeModel(string name, BinaryReader reader)
         {
-            var animations = new AnimationCollection(this.DeserializeAnimations(reader));
-            var boneHierarchy = this.DeserializeBoneHierarchy(reader);
-            var vertexes = this.DeserializeVertexes(reader);
-            var indices = this.DeserializeIndices(reader);
-
-            var meshes = new IModelMesh[]
+            var versionedSignature = reader.ReadInt32();
+            if (versionedSignature != Int32.MaxValue)
             {
-                new ModelMesh(_modelRenderConfigurations, _renderBatcher, null, boneHierarchy, vertexes, indices)
-            };
+                throw new InvalidOperationException("Expected version 5 model format.");
+            }
+
+            var version = reader.ReadInt32();
+            if (version != 5)
+            {
+                throw new InvalidOperationException("Expected version 5 model format.");
+            }
+
+            var animations = new AnimationCollection(this.DeserializeAnimations(reader));
+            var meshCount = reader.ReadInt32();
+            var meshes = new IModelMesh[meshCount];
+            for (var i = 0; i < meshCount; i++)
+            {
+                var material = this.DeserializeMaterial(reader);
+                var boneHierarchy = this.DeserializeBoneHierarchy(reader);
+                var vertexes = this.DeserializeVertexes(reader);
+                var indices = this.DeserializeIndices(reader);
+                meshes[i] = new ModelMesh(_modelRenderConfigurations, _renderBatcher, material, boneHierarchy, vertexes, indices);
+            }
 
             return new Model(name, animations, meshes);
+        }
+
+        /// <summary>
+        /// Deserializes a material from binary data.
+        /// </summary>
+        /// <param name="reader">
+        /// The binary reader to read from.
+        /// </param>
+        /// <returns>
+        /// The deserialized material.
+        /// </returns>
+        private IMaterial DeserializeMaterial(BinaryReader reader)
+        {
+            if (reader.ReadBoolean())
+            {
+                var material = new Material();
+
+                if (reader.ReadBoolean())
+                {
+                    material.Name = reader.ReadString();
+                }
+                material.ColorDiffuse = DeserializeNullableColor(reader);
+                material.ColorAmbient = DeserializeNullableColor(reader);
+                material.ColorEmissive = DeserializeNullableColor(reader);
+                material.ColorTransparent = DeserializeNullableColor(reader);
+                material.ColorReflective = DeserializeNullableColor(reader);
+                material.ColorSpecular = DeserializeNullableColor(reader);
+                material.TextureDiffuse = DeserializeMaterialTexture(reader);
+                material.TextureAmbient = DeserializeMaterialTexture(reader);
+                material.TextureDisplacement = DeserializeMaterialTexture(reader);
+                material.TextureEmissive = DeserializeMaterialTexture(reader);
+                material.TextureHeight = DeserializeMaterialTexture(reader);
+                material.TextureLightMap = DeserializeMaterialTexture(reader);
+                material.TextureNormal = DeserializeMaterialTexture(reader);
+                material.TextureOpacity = DeserializeMaterialTexture(reader);
+                material.TextureReflection = DeserializeMaterialTexture(reader);
+                material.TextureSpecular = DeserializeMaterialTexture(reader);
+                material.PowerSpecular = DeserializeNullableFloat(reader);
+                return material;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Deserializes a material texture from binary data.
+        /// </summary>
+        /// <param name="reader">
+        /// The binary reader to read from.
+        /// </param>
+        /// <returns>
+        /// The deserialized material texture.
+        /// </returns>
+        private IMaterialTexture DeserializeMaterialTexture(BinaryReader reader)
+        {
+            if (reader.ReadBoolean())
+            {
+                var texture = new MaterialTexture();
+                texture.HintPath = reader.ReadString();
+                return texture;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Deserializes a nullable color from binary data.
+        /// </summary>
+        /// <param name="reader">
+        /// The binary reader to read from.
+        /// </param>
+        /// <returns>
+        /// The deserialized nullable color.
+        /// </returns>
+        private Color? DeserializeNullableColor(BinaryReader reader)
+        {
+            if (reader.ReadBoolean())
+            {
+                return DeserializeColor(reader);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Deserializes a nullable float from binary data.
+        /// </summary>
+        /// <param name="reader">
+        /// The binary reader to read from.
+        /// </param>
+        /// <returns>
+        /// The deserialized nullable float.
+        /// </returns>
+        private float? DeserializeNullableFloat(BinaryReader reader)
+        {
+            if (reader.ReadBoolean())
+            {
+                return reader.ReadSingle();
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Deserializes a color from binary data.
+        /// </summary>
+        /// <param name="reader">
+        /// The binary reader to read from.
+        /// </param>
+        /// <returns>
+        /// The deserialized color.
+        /// </returns>
+        private Color DeserializeColor(BinaryReader reader)
+        {
+            var r = reader.ReadSingle();
+            var g = reader.ReadSingle();
+            var b = reader.ReadSingle();
+            var a = reader.ReadSingle();
+            return new Color(r, g, b, a);
         }
 
         /// <summary>
@@ -420,13 +560,88 @@ namespace Protogame
 
             for (var i = 0; i < vertexCount; i++)
             {
-                var pos = this.DeserializeVector3(reader);
-                var normal = this.DeserializeVector3(reader);
-                var uv = this.DeserializeVector2(reader);
-                var weight = this.DeserializeVector4(reader);
-                var index = this.DeserializeByte4(reader);
+                Vector3? position, normal, tangent, bitangent;
+                Color[] colors;
+                Vector2[] texCoordsUV;
+                Vector3[] texCoordsUVW;
+                Byte4? boneIndices;
+                Vector4? boneWeights;
 
-                vertexes.Add(new ModelVertex(pos, normal, null, null, new Color[0], new Vector2[] { uv }, null, index, weight));
+                if (reader.ReadBoolean())
+                {
+                    position = this.DeserializeVector3(reader);
+                }
+                else
+                {
+                    position = null;
+                }
+
+                if (reader.ReadBoolean())
+                {
+                    normal = this.DeserializeVector3(reader);
+                }
+                else
+                {
+                    normal = null;
+                }
+
+                if (reader.ReadBoolean())
+                {
+                    tangent = this.DeserializeVector3(reader);
+                    bitangent = this.DeserializeVector3(reader);
+                }
+                else
+                {
+                    tangent = null;
+                    bitangent = null;
+                }
+
+                colors = new Color[reader.ReadInt32()];
+                for (var c = 0; c < colors.Length; c++)
+                {
+                    colors[c] = this.DeserializeColor(reader);
+                }
+
+                texCoordsUV = new Vector2[reader.ReadInt32()];
+                for (var c = 0; c < texCoordsUV.Length; c++)
+                {
+                    texCoordsUV[c] = this.DeserializeVector2(reader);
+                }
+
+                texCoordsUVW = new Vector3[reader.ReadInt32()];
+                for (var c = 0; c < texCoordsUVW.Length; c++)
+                {
+                    texCoordsUVW[c] = this.DeserializeVector3(reader);
+                }
+
+                if (reader.ReadBoolean())
+                {
+                    boneIndices = this.DeserializeByte4(reader);
+                }
+                else
+                {
+                    boneIndices = null;
+                }
+
+                if (reader.ReadBoolean())
+                {
+                    boneWeights = this.DeserializeVector4(reader);
+                }
+                else
+                {
+                    boneWeights = null;
+                }
+
+                vertexes.Add(new ModelVertex(
+                    position,
+                    normal,
+                    tangent,
+                    bitangent,
+                    colors,
+                    texCoordsUV,
+                    texCoordsUVW,
+                    boneIndices,
+                    boneWeights));
             }
 
             return vertexes.ToArray();
@@ -467,6 +682,13 @@ namespace Protogame
         /// </param>
         private void SerializeBoneHierarchy(BinaryWriter writer, IModelBone root)
         {
+            writer.Write(root != null);
+
+            if (root == null)
+            {
+                return;
+            }
+
             writer.Write(root.ID);
             writer.Write(root.Name);
 
@@ -583,10 +805,151 @@ namespace Protogame
         /// </param>
         private void SerializeModel(BinaryWriter writer, IModel model)
         {
+            writer.Write(Int32.MaxValue);
+            writer.Write(5);
+
             this.SerializeAnimations(writer, model.AvailableAnimations);
-            this.SerializeBoneHierarchy(writer, model.Meshes[0].Root);
-            this.SerializeVertexes(writer, model.Meshes[0].Vertexes);
-            this.SerializeIndices(writer, model.Meshes[0].Indices);
+            writer.Write((Int32)model.Meshes.Length);
+            for (var i = 0; i < model.Meshes.Length; i++)
+            {
+                this.SerializeMaterial(writer, model.Meshes[i].Material);
+                this.SerializeBoneHierarchy(writer, model.Meshes[i].Root);
+                this.SerializeVertexes(writer, model.Meshes[i].Vertexes);
+                this.SerializeIndices(writer, model.Meshes[i].Indices);
+            }
+        }
+
+        /// <summary>
+        /// Serializes a material to a binary stream.
+        /// </summary>
+        /// <param name="writer">
+        /// The binary writer to which the material will be serialized.
+        /// </param>
+        /// <param name="model">
+        /// The material to serialize.
+        /// </param>
+        private void SerializeMaterial(BinaryWriter writer, IMaterial material)
+        {
+            if (material == null)
+            {
+                writer.Write(false);
+            }
+            else
+            {
+                writer.Write(true);
+
+                if (material.Name == null)
+                {
+                    writer.Write(false);
+                }
+                else
+                {
+                    writer.Write(true);
+                    writer.Write(material.Name);
+                }
+
+                SerializeNullableColor(writer, material.ColorDiffuse);
+                SerializeNullableColor(writer, material.ColorAmbient);
+                SerializeNullableColor(writer, material.ColorEmissive);
+                SerializeNullableColor(writer, material.ColorTransparent);
+                SerializeNullableColor(writer, material.ColorReflective);
+                SerializeNullableColor(writer, material.ColorSpecular);
+                SerializeMaterialTexture(writer, material.TextureDiffuse);
+                SerializeMaterialTexture(writer, material.TextureAmbient);
+                SerializeMaterialTexture(writer, material.TextureDisplacement);
+                SerializeMaterialTexture(writer, material.TextureEmissive);
+                SerializeMaterialTexture(writer, material.TextureHeight);
+                SerializeMaterialTexture(writer, material.TextureLightMap);
+                SerializeMaterialTexture(writer, material.TextureNormal);
+                SerializeMaterialTexture(writer, material.TextureOpacity);
+                SerializeMaterialTexture(writer, material.TextureReflection);
+                SerializeMaterialTexture(writer, material.TextureSpecular);
+                SerializeNullableFloat(writer, material.PowerSpecular);
+            }
+        }
+
+        /// <summary>
+        /// Serializes a material texture to a binary stream.
+        /// </summary>
+        /// <param name="writer">
+        /// The binary writer to which the material texture will be serialized.
+        /// </param>
+        /// <param name="texture">
+        /// The material texture to serialize.
+        /// </param>
+        private void SerializeMaterialTexture(BinaryWriter writer, IMaterialTexture texture)
+        {
+            if (texture?.HintPath == null)
+            {
+                writer.Write(false);
+            }
+            else
+            {
+                writer.Write(true);
+
+                writer.Write(texture.HintPath);
+            }
+        }
+
+        /// <summary>
+        /// Serializes a <see cref="Nullable{Color}"/> to a binary stream.
+        /// </summary>
+        /// <param name="writer">
+        /// The binary writer to which the <see cref="Nullable{Color}"/> will be serialized.
+        /// </param>
+        /// <param name="color">
+        /// The color to serialize.
+        /// </param>
+        private void SerializeNullableColor(BinaryWriter writer, Color? color)
+        {
+            if (color == null)
+            {
+                writer.Write(false);
+            }
+            else
+            {
+                writer.Write(true);
+                this.SerializeColor(writer, color.Value);
+            }
+        }
+
+        /// <summary>
+        /// Serializes a <see cref="Nullable{Single}"/> to a binary stream.
+        /// </summary>
+        /// <param name="writer">
+        /// The binary writer to which the <see cref="Nullable{Single}"/> will be serialized.
+        /// </param>
+        /// <param name="float">
+        /// The nullable float to serialize.
+        /// </param>
+        private void SerializeNullableFloat(BinaryWriter writer, float? value)
+        {
+            if (value == null)
+            {
+                writer.Write(false);
+            }
+            else
+            {
+                writer.Write(true);
+                writer.Write(value.Value);
+            }
+        }
+
+        /// <summary>
+        /// Serializes a <see cref="Color"/> to a binary stream.
+        /// </summary>
+        /// <param name="writer">
+        /// The binary writer to which the <see cref="Color"/> will be serialized.
+        /// </param>
+        /// <param name="color">
+        /// The color to serialize.
+        /// </param>
+        private void SerializeColor(BinaryWriter writer, Color color)
+        {
+            writer.Write(color.R / 255f);
+            writer.Write(color.G / 255f);
+            writer.Write(color.B / 255f);
+            writer.Write(color.A / 255f);
         }
 
         /// <summary>
@@ -713,11 +1076,76 @@ namespace Protogame
 
             for (var i = 0; i < vertexes.Length; i++)
             {
-                this.SerializeVector3(writer, vertexes[i].Position ?? Vector3.Zero);
-                this.SerializeVector3(writer, vertexes[i].Normal ?? Vector3.Zero);
-                this.SerializeVector2(writer, vertexes[i].TexCoordsUV[0]);
-                this.SerializeVector4(writer, vertexes[i].BoneWeights ?? Vector4.Zero);
-                this.SerializeVector4(writer, (vertexes[i].BoneIndices ?? new Byte4()).ToVector4());
+                var v = vertexes[i];
+
+                if (v.Position != null)
+                {
+                    writer.Write(true);
+                    this.SerializeVector3(writer, v.Position.Value);
+                }
+                else
+                {
+                    writer.Write(false);
+                }
+
+                if (v.Normal != null)
+                {
+                    writer.Write(true);
+                    this.SerializeVector3(writer, v.Normal.Value);
+                }
+                else
+                {
+                    writer.Write(false);
+                }
+
+                if (v.Tangent != null && v.BiTangent != null)
+                {
+                    writer.Write(true);
+                    this.SerializeVector3(writer, v.Tangent.Value);
+                    this.SerializeVector3(writer, v.BiTangent.Value);
+                }
+                else
+                {
+                    writer.Write(false);
+                }
+
+                writer.Write(v.Colors.Length);
+                for (var c = 0; c < v.Colors.Length; c++)
+                {
+                    this.SerializeColor(writer, v.Colors[c]);
+                }
+
+                writer.Write(v.TexCoordsUV.Length);
+                for (var c = 0; c < v.TexCoordsUV.Length; c++)
+                {
+                    this.SerializeVector2(writer, v.TexCoordsUV[c]);
+                }
+
+                writer.Write(v.TexCoordsUVW.Length);
+                for (var c = 0; c < v.TexCoordsUVW.Length; c++)
+                {
+                    this.SerializeVector3(writer, v.TexCoordsUVW[c]);
+                }
+
+                if (v.BoneIndices != null)
+                {
+                    writer.Write(true);
+                    this.SerializeVector4(writer, v.BoneIndices.Value.ToVector4());
+                }
+                else
+                {
+                    writer.Write(false);
+                }
+
+                if (v.BoneWeights != null)
+                {
+                    writer.Write(true);
+                    this.SerializeVector4(writer, v.BoneWeights.Value);
+                }
+                else
+                {
+                    writer.Write(false);
+                }
             }
         }
     }

@@ -139,6 +139,7 @@
     <Compile Include="Assets\Model\ModelSerializerVersion2.cs" />
     <Compile Include="Assets\Model\ModelSerializerVersion3.cs" />
     <Compile Include="Assets\Model\ModelSerializerVersion4.cs" />
+    <Compile Include="Assets\Model\ModelSerializerVersion5.cs" />
     <Compile Include="Assets\Model\ModelVertex.cs" />
     <Compile Include="Assets\Model\ModelVertexMapping.cs" />
     <Compile Include="Assets\Model\VertexPositionNormal.cs" />

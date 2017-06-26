@@ -128,44 +128,46 @@ namespace Protogame
             
             var scene = importer.ImportFile(filename, ProcessFlags);
 
-            ModelVertex[] vertexes;
-            int[] indices;
-            IModelBone boneHierarchy;
-            Material material = null;
-
-            if (scene.MeshCount >= 1)
+            // Import the meshes.
+            var importedMeshes = new IModelMesh[scene.MeshCount];
+            for (var i = 0; i < scene.MeshCount; i++)
             {
-                var boneWeightingMap = this.BuildBoneWeightingMap(scene);
-                var staticTransformMap = this.BuildStaticTransformMap(scene);
-                
+                Material material = null;
+                IModelBone boneHierarchy;
+
+                var boneWeightingMap = this.BuildBoneWeightingMap(scene, i);
+                var staticTransformMap = this.BuildStaticTransformMap(scene, i);
+
+                var vertexes = this.ImportVertexes(scene, i, boneWeightingMap, staticTransformMap);
+                var indices = this.ImportIndices(scene, i);
+
                 if (options?.Contains("!NoBoneHierarchy") ?? false)
                 {
                     boneHierarchy = null;
                 }
                 else
                 {
-                    boneHierarchy = this.ImportBoneHierarchy(scene.RootNode, scene.Meshes[0]);
+                    boneHierarchy = this.ImportBoneHierarchy(scene.RootNode, scene.Meshes[i]);
                 }
 
-                vertexes = this.ImportVertexes(scene, boneWeightingMap, staticTransformMap);
-                indices = this.ImportIndices(scene);
-            }
-            else
-            {
-                boneHierarchy = this.ImportBoneHierarchy(scene.RootNode, null);
-                vertexes = new ModelVertex[0];
-                indices = new int[0];
+                // If the mesh has a material associated with it, read in
+                // the material information.
+                if (scene.MaterialCount > scene.Meshes[i].MaterialIndex)
+                {
+                    var assimpMaterial = scene.Materials[scene.Meshes[i].MaterialIndex];
+
+                    material = ConvertMaterial(assimpMaterial);
+                }
+
+                importedMeshes[i] = new ModelMesh(
+                    _modelRenderConfigurations,
+                    _renderBatcher,
+                    material,
+                    boneHierarchy,
+                    vertexes,
+                    indices);
             }
             
-            // If the scene has materials associated with it, and the mesh has
-            // a material associated with it, read in the material information.
-            if (scene.MeshCount >= 1 && scene.MaterialCount > scene.Meshes[0].MaterialIndex)
-            {
-                var assimpMaterial = scene.Materials[scene.Meshes[0].MaterialIndex];
-
-                material = ConvertMaterial(assimpMaterial);
-            }
-
             // Create the list of animations, including the null animation.
             var animations = new List<IAnimation>();
 
@@ -187,14 +189,9 @@ namespace Protogame
 
             // Return the resulting model.
             return new Model(
-                _modelRenderConfigurations,
-                _renderBatcher,
                 name,
                 new AnimationCollection(animations),
-                material,
-                boneHierarchy, 
-                vertexes,
-                indices);
+                importedMeshes);
         }
 
         private Material ConvertMaterial(Assimp.Material m)
@@ -300,17 +297,17 @@ namespace Protogame
         /// <returns>
         /// The bone weighting map.
         /// </returns>
-        private Dictionary<Vector3, KeyValuePair<Byte4, Vector4>> BuildBoneWeightingMap(Scene scene)
+        private Dictionary<Vector3, KeyValuePair<Byte4, Vector4>> BuildBoneWeightingMap(Scene scene, int meshIndex)
         {
             var map = new Dictionary<Vector3, List<KeyValuePair<int, float>>>();
-
-            for (var i = 0; i < scene.Meshes[0].BoneCount; i++)
+            
+            for (var i = 0; i < scene.Meshes[meshIndex].BoneCount; i++)
             {
-                var bone = scene.Meshes[0].Bones[i];
+                var bone = scene.Meshes[meshIndex].Bones[i];
 
                 for (var w = 0; w < bone.VertexWeightCount; w++)
                 {
-                    var assimpVertex = scene.Meshes[0].Vertices[bone.VertexWeights[w].VertexID];
+                    var assimpVertex = scene.Meshes[meshIndex].Vertices[bone.VertexWeights[w].VertexID];
                     var vertex = new Vector3(assimpVertex.X, assimpVertex.Y, assimpVertex.Z);
 
                     if (!map.ContainsKey(vertex))
@@ -379,15 +376,15 @@ namespace Protogame
         /// A map of meshes to transform matrices.  Because this importer can only 
         /// handle a single mesh per scene, this will only contain one entry.
         /// </returns>
-        private Dictionary<Mesh, Matrix> BuildStaticTransformMap(Scene scene)
+        private Dictionary<Mesh, Matrix> BuildStaticTransformMap(Scene scene, int meshIndex)
         {
-            var matrix = this.GetStaticTransformMatrixForFirstMesh(scene.RootNode);
+            var matrix = this.GetStaticTransformMatrixForFirstMesh(scene.RootNode, meshIndex);
 
             if (matrix != null)
             {
                 return new Dictionary<Mesh, Matrix>
                 {
-                    {scene.Meshes[0], matrix.Value}
+                    {scene.Meshes[meshIndex], matrix.Value}
                 };
             }
 
@@ -401,9 +398,9 @@ namespace Protogame
         /// </summary>
         /// <param name="node">The node to inspect.</param>
         /// <returns>A matrix, or null.</returns>
-        private Matrix? GetStaticTransformMatrixForFirstMesh(Node node)
+        private Matrix? GetStaticTransformMatrixForFirstMesh(Node node, int meshIndex)
         {
-            if (node.MeshCount > 0 && node.MeshIndices[0] == 0 /* is this for the first mesh? */)
+            if (node.MeshCount > 0 && node.MeshIndices[0] == meshIndex)
             {
                 return this.MatrixFromAssImpMatrix(node.Transform);
             }
@@ -412,7 +409,7 @@ namespace Protogame
             {
                 foreach (var child in node.Children)
                 {
-                    var result = GetStaticTransformMatrixForFirstMesh(child);
+                    var result = GetStaticTransformMatrixForFirstMesh(child, meshIndex);
                     if (result != null)
                     {
                         // We have to return a matrix which is this node's transformation
@@ -435,7 +432,7 @@ namespace Protogame
         /// <returns>
         /// The imported indices.
         /// </returns>
-        private int[] ImportIndices(Scene scene)
+        private int[] ImportIndices(Scene scene, int meshIndex)
         {
             var mesh = scene.Meshes[0];
 
@@ -455,7 +452,7 @@ namespace Protogame
         /// <returns>
         /// The imported vertexes.
         /// </returns>
-        private ModelVertex[] ImportVertexes(Scene scene, Dictionary<Vector3, KeyValuePair<Byte4, Vector4>> boneWeightingMap, Dictionary<Mesh, Matrix> staticTransformMap)
+        private ModelVertex[] ImportVertexes(Scene scene, int meshIndex, Dictionary<Vector3, KeyValuePair<Byte4, Vector4>> boneWeightingMap, Dictionary<Mesh, Matrix> staticTransformMap)
         {
             var mesh = scene.Meshes[0];
 

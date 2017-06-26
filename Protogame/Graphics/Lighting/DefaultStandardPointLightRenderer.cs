@@ -75,7 +75,7 @@ namespace Protogame
 
                 renderContext.World = Matrix.CreateScale(light.LightRadius) * Matrix.CreateTranslation(light.LightPosition);
 
-                _pointLightSphereModelInstance.Render(renderContext, _pointLightEffect.Asset.Effect, _parameterSet, Matrix.Identity);
+                _pointLightSphereModelInstance.Meshes[0].Render(_pointLightSphereModelInstance, renderContext, _pointLightEffect.Asset.Effect, _parameterSet, Matrix.Identity);
             }
 
             renderContext.World = oldWorld;

@@ -241,124 +241,127 @@
         {
             totalSeconds = (float)(totalSeconds * this.TicksPerSecond * multiply);
 
-            foreach (var bone in model.Bones.Keys)
+            foreach (var mesh in model.Meshes)
             {
-                var boneObj = model.Bones[bone];
-
-                if (this.m_TranslationKeys.ContainsKey(bone))
+                foreach (var bone in mesh.Bones.Keys)
                 {
-                    double translationKeyPrevious, translationKeyNext;
+                    var boneObj = mesh.Bones[bone];
 
-                    this.FindSurroundingTickValues(
-                        this.m_TranslationKeys[bone],
-                        totalSeconds,
-                        out translationKeyPrevious,
-                        out translationKeyNext);
-
-                    if (Math.Abs(translationKeyPrevious - (-1)) < 0.0001f || Math.Abs(translationKeyNext - (-1)) < 0.0001f)
+                    if (this.m_TranslationKeys.ContainsKey(bone))
                     {
-                        if (Math.Abs(translationKeyPrevious - (-1)) >= 0.0001f)
+                        double translationKeyPrevious, translationKeyNext;
+
+                        this.FindSurroundingTickValues(
+                            this.m_TranslationKeys[bone],
+                            totalSeconds,
+                            out translationKeyPrevious,
+                            out translationKeyNext);
+
+                        if (Math.Abs(translationKeyPrevious - (-1)) < 0.0001f || Math.Abs(translationKeyNext - (-1)) < 0.0001f)
                         {
-                            boneObj.CurrentTranslation = this.m_TranslationForBones[bone][translationKeyPrevious];
+                            if (Math.Abs(translationKeyPrevious - (-1)) >= 0.0001f)
+                            {
+                                boneObj.CurrentTranslation = this.m_TranslationForBones[bone][translationKeyPrevious];
+                            }
+                            else if (Math.Abs(translationKeyNext - (-1)) >= 0.0001f)
+                            {
+                                boneObj.CurrentTranslation = this.m_TranslationForBones[bone][translationKeyNext];
+                            }
                         }
-                        else if (Math.Abs(translationKeyNext - (-1)) >= 0.0001f)
+                        else
                         {
-                            boneObj.CurrentTranslation = this.m_TranslationForBones[bone][translationKeyNext];
+                            var previousTranslation = this.m_TranslationForBones[bone][translationKeyPrevious];
+                            var nextTranslation = this.m_TranslationForBones[bone][translationKeyNext];
+
+                            var actualTranslation = previousTranslation;
+
+                            if (Math.Abs(translationKeyPrevious - translationKeyNext) > 0.0001f)
+                            {
+                                var amount =
+                                    (float)
+                                    -((translationKeyPrevious - totalSeconds) / (translationKeyNext - translationKeyPrevious));
+
+                                actualTranslation = Vector3.Lerp(previousTranslation, nextTranslation, amount);
+                            }
+
+                            boneObj.CurrentTranslation = actualTranslation;
                         }
                     }
-                    else
+
+                    if (this.m_RotationKeys.ContainsKey(bone))
                     {
-                        var previousTranslation = this.m_TranslationForBones[bone][translationKeyPrevious];
-                        var nextTranslation = this.m_TranslationForBones[bone][translationKeyNext];
+                        double rotationKeyPrevious, rotationKeyNext;
 
-                        var actualTranslation = previousTranslation;
+                        this.FindSurroundingTickValues(
+                            this.m_RotationKeys[bone],
+                            totalSeconds,
+                            out rotationKeyPrevious,
+                            out rotationKeyNext);
 
-                        if (Math.Abs(translationKeyPrevious - translationKeyNext) > 0.0001f)
+                        if (Math.Abs(rotationKeyPrevious - (-1)) < 0.0001f || Math.Abs(rotationKeyNext - (-1)) < 0.0001f)
                         {
-                            var amount =
-                                (float)
-                                -((translationKeyPrevious - totalSeconds) / (translationKeyNext - translationKeyPrevious));
-
-                            actualTranslation = Vector3.Lerp(previousTranslation, nextTranslation, amount);
+                            if (Math.Abs(rotationKeyPrevious - (-1)) >= 0.0001f)
+                            {
+                                boneObj.CurrentRotation = this.m_RotationForBones[bone][rotationKeyPrevious];
+                            }
+                            else if (Math.Abs(rotationKeyNext - (-1)) >= 0.0001f)
+                            {
+                                boneObj.CurrentRotation = this.m_RotationForBones[bone][rotationKeyNext];
+                            }
                         }
-
-                        boneObj.CurrentTranslation = actualTranslation;
-                    }
-                }
-
-                if (this.m_RotationKeys.ContainsKey(bone))
-                {
-                    double rotationKeyPrevious, rotationKeyNext;
-
-                    this.FindSurroundingTickValues(
-                        this.m_RotationKeys[bone],
-                        totalSeconds,
-                        out rotationKeyPrevious,
-                        out rotationKeyNext);
-
-                    if (Math.Abs(rotationKeyPrevious - (-1)) < 0.0001f || Math.Abs(rotationKeyNext - (-1)) < 0.0001f)
-                    {
-                        if (Math.Abs(rotationKeyPrevious - (-1)) >= 0.0001f)
+                        else
                         {
-                            boneObj.CurrentRotation = this.m_RotationForBones[bone][rotationKeyPrevious];
-                        }
-                        else if (Math.Abs(rotationKeyNext - (-1)) >= 0.0001f)
-                        {
-                            boneObj.CurrentRotation = this.m_RotationForBones[bone][rotationKeyNext];
-                        }
-                    }
-                    else
-                    {
-                        var previousRotation = this.m_RotationForBones[bone][rotationKeyPrevious];
-                        var nextRotation = this.m_RotationForBones[bone][rotationKeyNext];
+                            var previousRotation = this.m_RotationForBones[bone][rotationKeyPrevious];
+                            var nextRotation = this.m_RotationForBones[bone][rotationKeyNext];
 
-                        var actualRotation = previousRotation;
+                            var actualRotation = previousRotation;
 
-                        if (Math.Abs(rotationKeyPrevious - rotationKeyNext) > 0.0001f)
-                        {
-                            actualRotation = Quaternion.Lerp(
-                                previousRotation,
-                                nextRotation,
-                                (float)-((rotationKeyPrevious - totalSeconds) / (rotationKeyNext - rotationKeyPrevious)));
-                        }
+                            if (Math.Abs(rotationKeyPrevious - rotationKeyNext) > 0.0001f)
+                            {
+                                actualRotation = Quaternion.Lerp(
+                                    previousRotation,
+                                    nextRotation,
+                                    (float)-((rotationKeyPrevious - totalSeconds) / (rotationKeyNext - rotationKeyPrevious)));
+                            }
 
-                        boneObj.CurrentRotation = actualRotation;
-                    }
-                }
-
-                if (this.m_ScaleKeys.ContainsKey(bone))
-                {
-                    double scaleKeyPrevious, scaleKeyNext;
-
-                    this.FindSurroundingTickValues(this.m_ScaleKeys[bone], totalSeconds, out scaleKeyPrevious, out scaleKeyNext);
-
-                    if (Math.Abs(scaleKeyPrevious - (-1)) < 0.0001f || Math.Abs(scaleKeyNext - (-1)) < 0.0001f)
-                    {
-                        if (Math.Abs(scaleKeyPrevious - (-1)) >= 0.0001f)
-                        {
-                            boneObj.CurrentScale = this.m_ScaleForBones[bone][scaleKeyPrevious];
-                        }
-                        else if (Math.Abs(scaleKeyNext - (-1)) >= 0.0001f)
-                        {
-                            boneObj.CurrentScale = this.m_ScaleForBones[bone][scaleKeyNext];
+                            boneObj.CurrentRotation = actualRotation;
                         }
                     }
-                    else
+
+                    if (this.m_ScaleKeys.ContainsKey(bone))
                     {
-                        var previousScale = this.m_ScaleForBones[bone][scaleKeyPrevious];
-                        var nextScale = this.m_ScaleForBones[bone][scaleKeyNext];
+                        double scaleKeyPrevious, scaleKeyNext;
 
-                        var actualScale = previousScale;
+                        this.FindSurroundingTickValues(this.m_ScaleKeys[bone], totalSeconds, out scaleKeyPrevious, out scaleKeyNext);
 
-                        if (Math.Abs(scaleKeyPrevious - scaleKeyNext) > 0.0001f)
+                        if (Math.Abs(scaleKeyPrevious - (-1)) < 0.0001f || Math.Abs(scaleKeyNext - (-1)) < 0.0001f)
                         {
-                            actualScale = Vector3.Lerp(
-                                previousScale,
-                                nextScale,
-                                (float)-((scaleKeyPrevious - totalSeconds) / (scaleKeyNext - scaleKeyPrevious)));
+                            if (Math.Abs(scaleKeyPrevious - (-1)) >= 0.0001f)
+                            {
+                                boneObj.CurrentScale = this.m_ScaleForBones[bone][scaleKeyPrevious];
+                            }
+                            else if (Math.Abs(scaleKeyNext - (-1)) >= 0.0001f)
+                            {
+                                boneObj.CurrentScale = this.m_ScaleForBones[bone][scaleKeyNext];
+                            }
                         }
+                        else
+                        {
+                            var previousScale = this.m_ScaleForBones[bone][scaleKeyPrevious];
+                            var nextScale = this.m_ScaleForBones[bone][scaleKeyNext];
 
-                        boneObj.CurrentScale = actualScale;
+                            var actualScale = previousScale;
+
+                            if (Math.Abs(scaleKeyPrevious - scaleKeyNext) > 0.0001f)
+                            {
+                                actualScale = Vector3.Lerp(
+                                    previousScale,
+                                    nextScale,
+                                    (float)-((scaleKeyPrevious - totalSeconds) / (scaleKeyNext - scaleKeyPrevious)));
+                            }
+
+                            boneObj.CurrentScale = actualScale;
+                        }
                     }
                 }
             }

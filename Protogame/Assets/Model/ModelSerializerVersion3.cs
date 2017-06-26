@@ -292,7 +292,12 @@ namespace Protogame
             var vertexes = this.DeserializeVertexes(reader);
             var indices = this.DeserializeIndices(reader);
 
-            return new Model(_modelRenderConfigurations, _renderBatcher, name, animations, material, boneHierarchy, vertexes, indices);
+            var meshes = new IModelMesh[]
+            {
+                new ModelMesh(_modelRenderConfigurations, _renderBatcher, material, boneHierarchy, vertexes, indices)
+            };
+
+            return new Model(name, animations, meshes);
         }
 
         /// <summary>
@@ -783,10 +788,10 @@ namespace Protogame
             writer.Write(3);
 
             this.SerializeAnimations(writer, model.AvailableAnimations);
-            this.SerializeMaterial(writer, model.Material);
-            this.SerializeBoneHierarchy(writer, model.Root);
-            this.SerializeVertexes(writer, model.Vertexes);
-            this.SerializeIndices(writer, model.Indices);
+            this.SerializeMaterial(writer, model.Meshes[0].Material);
+            this.SerializeBoneHierarchy(writer, model.Meshes[0].Root);
+            this.SerializeVertexes(writer, model.Meshes[0].Vertexes);
+            this.SerializeIndices(writer, model.Meshes[0].Indices);
         }
 
         /// <summary>

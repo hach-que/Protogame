@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Collections.Generic;
 
 namespace Protogame
 {
@@ -21,6 +22,28 @@ namespace Protogame
         /// The material associated with this mesh.
         /// </value>
         IMaterial Material { get; }
+
+        /// <summary>
+        /// Gets the root bone of the mesh's skeleton.
+        /// </summary>
+        /// <remarks>
+        /// This value is null if there is no skeleton attached to the mesh.
+        /// </remarks>
+        /// <value>
+        /// The root bone of the mesh's skeleton.
+        /// </value>
+        IModelBone Root { get; }
+
+        /// <summary>
+        /// Gets the mesh's bones by their names.
+        /// </summary>
+        /// <remarks>
+        /// This value is null if there is no skeleton attached to the mesh.
+        /// </remarks>
+        /// <value>
+        /// The mesh bones addressed by their names.
+        /// </value>
+        IDictionary<string, IModelBone> Bones { get; }
 
         /// <summary>
         /// Gets the index buffer.
@@ -52,20 +75,22 @@ namespace Protogame
         /// <summary>
         /// Renders the mesh using the specified transform.
         /// </summary>
+        /// <param name="model">The model this mesh belongs to.</param>
         /// <param name="renderContext">The render context.</param>
         /// <param name="transform">The transform.</param>
         /// <param name="effectParameterSet"></param>
         /// <param name="effect"></param>
-        void Render(Model model, IModelBone[] flattenedBones, IRenderContext renderContext, IEffect effect, IEffectParameterSet effectParameterSet, Matrix transform);
+        void Render(IModel model, IRenderContext renderContext, IEffect effect, IEffectParameterSet effectParameterSet, Matrix transform);
 
         /// <summary>
         /// Creates a render request for the mesh using the specified transform.
         /// </summary>
+        /// <param name="model">The model this mesh belongs to.</param>
         /// <param name="renderContext">The render context.</param>
         /// <param name="effect"></param>
         /// <param name="effectParameterSet"></param>
         /// <param name="transform">The transform.</param>
-        IRenderRequest CreateRenderRequest(Model model, IModelBone[] flattenedBones, IRenderContext renderContext, IEffect effect, IEffectParameterSet effectParameterSet, Matrix transform);
+        IRenderRequest CreateRenderRequest(IModel model, IRenderContext renderContext, IEffect effect, IEffectParameterSet effectParameterSet, Matrix transform);
         
         /// <summary>
         /// Frees any vertex buffers that are cached inside this mesh.
